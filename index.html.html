@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spectrum Coach — Estimating System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1E3A5F;
+    --navy-light: #E8EEF5;
+    --navy-mid: #2d5a8e;
+    --green: #2EAA6E;
+    --green-light: #E8F7F0;
+    --white: #FFFFFF;
+    --body: #333333;
+    --gray: #666;
+    --gray-light: #f5f6f8;
+    --border: #dde2ea;
+    --danger: #e24b4a;
+    --danger-light: #FCEBEB;
+  }
+
+  html, body { height: 100%; }
+  body { font-family: 'DM Sans', Arial, sans-serif; color: var(--body); background: var(--gray-light); min-height: 100vh; }
+
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); padding: 2rem; }
+  .auth-card { background: white; border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .auth-logo { text-align: center; margin-bottom: 2rem; }
+  .auth-logo .wordmark { font-size: 22px; font-weight: 600; color: var(--navy); letter-spacing: 2px; text-transform: uppercase; margin-top: 12px; }
+  .auth-logo .tagline { font-size: 11px; color: var(--green); letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 5px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--body); background: white; outline: none; transition: border 0.2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(30,58,95,0.08); }
+  .btn { padding: 11px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--navy); color: white; width: 100%; justify-content: center; }
+  .btn-primary:hover { background: var(--navy-mid); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { opacity: 0.9; }
+  .btn-outline { background: white; color: var(--navy); border: 1px solid var(--border); }
+  .btn-outline:hover { border-color: var(--navy); background: var(--navy-light); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+  .btn-xs { padding: 4px 10px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--navy); cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; }
+  .btn-xs:hover { border-color: var(--navy); background: var(--navy-light); }
+  .error-msg { background: var(--danger-light); color: var(--danger); padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--navy); flex-shrink: 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+  .sidebar-logo { padding: 1.5rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo .wordmark { font-size: 15px; font-weight: 600; color: white; letter-spacing: 2px; text-transform: uppercase; }
+  .sidebar-logo .tagline { font-size: 10px; color: var(--green); letter-spacing: 3px; text-transform: uppercase; margin-top: 3px; }
+  .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+  .nav-section { padding: 0.5rem 1.25rem 0.25rem; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 1.5px; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem; font-size: 14px; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { color: white; background: rgba(255,255,255,0.07); }
+  .nav-item.active { color: white; background: rgba(255,255,255,0.12); border-left-color: var(--green); }
+  .nav-item i { font-size: 16px; }
+  .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); }
+  .user-badge { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: white; flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .btn-logout { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; padding: 4px; font-size: 16px; display: flex; align-items: center; }
+  .btn-logout:hover { color: white; }
+
+  .main { flex: 1; margin-left: 240px; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: white; border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 18px; font-weight: 600; color: var(--navy); }
+  .topbar-actions { display: flex; gap: 8px; }
+  .content { flex: 1; padding: 1.5rem; }
+
+  .card { background: white; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; }
+  .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 1.25rem; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--body); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--gray-light); }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge-green { background: var(--green-light); color: #1a7a4e; }
+  .badge-navy { background: var(--navy-light); color: var(--navy); }
+  .badge-gray { background: var(--gray-light); color: var(--gray); }
+
+  .estimate-grid { display: grid; grid-template-columns: 1fr 300px; gap: 1rem; align-items: start; }
+  .category-block { margin-bottom: 1rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .cat-header { background: var(--navy); color: white; padding: 11px 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .cat-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .item-row { display: grid; grid-template-columns: 28px 1fr 80px 90px 70px 90px; gap: 8px; align-items: center; padding: 9px 1.25rem; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .item-row:last-child { border-bottom: none; }
+  .item-row:hover { background: #fafbfc; }
+  .item-check input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--green); }
+  .item-name { font-size: 13px; font-weight: 500; color: var(--navy); }
+  .item-sub { color: var(--gray); font-size: 11px; margin-top: 1px; }
+  .item-input input { width: 100%; padding: 5px 7px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; text-align: right; font-family: inherit; background: white; }
+  .item-input input:focus { outline: none; border-color: var(--navy); }
+  .item-total-val { font-size: 13px; font-weight: 600; text-align: right; }
+  .item-total-val.active { color: var(--green); }
+  .item-total-val.inactive { color: #ccc; }
+
+  .quote-panel { position: sticky; top: 76px; }
+  .summary-line { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .summary-line:last-child { border-bottom: none; }
+  .summary-line.total-line { font-weight: 700; font-size: 16px; color: var(--navy); padding-top: 10px; margin-top: 4px; }
+  .summary-amt { color: var(--green); font-weight: 500; }
+  .summary-cat { color: var(--navy); font-size: 13px; }
+
+  .client-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .stat-label { font-size: 12px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 600; color: var(--navy); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--green); margin-top: 4px; }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray); }
+  .empty-state i { font-size: 40px; color: var(--border); display: block; margin-bottom: 1rem; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+  .modal { background: white; border-radius: 14px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal-header { padding: 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 16px; font-weight: 600; color: var(--navy); }
+  .modal-body { padding: 1.25rem; }
+  .modal-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider-toggle { position: absolute; cursor: pointer; inset: 0; background: var(--border); border-radius: 20px; transition: .2s; }
+  .slider-toggle:before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .2s; }
+  input:checked + .slider-toggle { background: var(--green); }
+  input:checked + .slider-toggle:before { transform: translateX(16px); }
+
+  .tc-block { background: var(--gray-light); border-radius: 8px; padding: 1rem; font-size: 13px; color: var(--gray); line-height: 1.7; max-height: 180px; overflow-y: auto; }
+
+  .quote-item { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.15s; }
+  .quote-item:hover { border-color: var(--navy); }
+  .client-name-disp { font-weight: 600; color: var(--navy); font-size: 14px; }
+  .quote-meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+  .quote-amount { font-size: 20px; font-weight: 700; color: var(--green); }
+
+  .col-hdr { display: grid; grid-template-columns: 28px 1fr 80px 90px 70px 90px; gap: 8px; padding: 6px 1.25rem; background: #f8f9fb; font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+
+  @media (max-width: 900px) {
+    .estimate-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .client-grid { grid-template-columns: 1fr; }
+    .quote-panel { position: static; }
+    .sidebar { transform: translateX(-240px); }
+    .main { margin-left: 0; }
+  }
+
+  @media print {
+    .sidebar, .topbar { display: none !important; }
+    .main { margin-left: 0 !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+const DEFAULT_DATA = {
+  users: [
+    { id: 'admin1', username: 'admin', password: 'admin123', role: 'admin', name: 'Admin User' },
+    { id: 'user1', username: 'sales', password: 'sales123', role: 'user', name: 'Sales Rep' }
+  ],
+  categories: [
+    { id: 'cat_house', name: 'House Type', icon: 'ti-home', order: 1, active: true },
+    { id: 'cat_site', name: 'Site Costs', icon: 'ti-map-pin', order: 2, active: true },
+    { id: 'cat_facade', name: 'Facades', icon: 'ti-building', order: 3, active: true },
+    { id: 'cat_floor', name: 'Flooring', icon: 'ti-layout-grid', order: 4, active: true },
+    { id: 'cat_kitchen', name: 'Kitchen', icon: 'ti-tools-kitchen-2', order: 5, active: true },
+    { id: 'cat_elec', name: 'Electrical', icon: 'ti-bolt', order: 6, active: true },
+    { id: 'cat_struct', name: 'Structural Changes', icon: 'ti-building-arch', order: 7, active: true },
+    { id: 'cat_display', name: 'Display Items', icon: 'ti-star', order: 8, active: true },
+    { id: 'cat_tc', name: 'Terms & Conditions', icon: 'ti-file-description', order: 9, active: true }
+  ],
+  items: [
+    { id: 'i1', catId: 'cat_house', name: 'Amalfi 28', description: '28 sq double storey home', priceType: 'fixed', basePrice: 285000, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i2', catId: 'cat_house', name: 'Riviera 32', description: '32 sq home with alfresco', priceType: 'fixed', basePrice: 315000, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i3', catId: 'cat_house', name: 'Custom Size', description: 'Price calculated by SQM rate', priceType: 'sqm', basePrice: 0, sqmRate: 9800, defaultQty: 28, active: true },
+    { id: 'i4', catId: 'cat_site', name: 'Soil Test', description: 'Geotechnical soil testing', priceType: 'fixed', basePrice: 850, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i5', catId: 'cat_site', name: 'Site Scrape & Level', description: 'Site preparation and levelling', priceType: 'fixed', basePrice: 4500, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i6', catId: 'cat_site', name: 'Retaining Wall', description: 'Concrete block retaining wall (per lm)', priceType: 'sqm', basePrice: 0, sqmRate: 750, defaultQty: 10, active: true },
+    { id: 'i7', catId: 'cat_facade', name: 'Hamptons Facade', description: 'Weatherboard feature with feature gable', priceType: 'fixed', basePrice: 8500, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i8', catId: 'cat_facade', name: 'Contemporary Facade', description: 'Render finish with feature brickwork', priceType: 'fixed', basePrice: 7200, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i9', catId: 'cat_floor', name: 'Timber Hybrid Flooring', description: 'Ground floor living areas (per sqm)', priceType: 'sqm', basePrice: 0, sqmRate: 85, defaultQty: 60, active: true },
+    { id: 'i10', catId: 'cat_floor', name: 'Carpet to Bedrooms', description: 'All bedrooms including stairs (per sqm)', priceType: 'sqm', basePrice: 0, sqmRate: 55, defaultQty: 40, active: true },
+    { id: 'i11', catId: 'cat_kitchen', name: 'Kitchen Upgrade - Standard', description: '20mm stone benchtops + soft close', priceType: 'fixed', basePrice: 6500, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i12', catId: 'cat_kitchen', name: 'Kitchen Upgrade - Premium', description: 'Waterfall stone + integrated appliances', priceType: 'fixed', basePrice: 14800, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i13', catId: 'cat_elec', name: 'Downlights - Additional', description: 'LED downlights per point', priceType: 'sqm', basePrice: 0, sqmRate: 185, defaultQty: 10, active: true },
+    { id: 'i14', catId: 'cat_elec', name: 'Solar System 6.6kW', description: '6.6kW solar with inverter', priceType: 'fixed', basePrice: 5200, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i15', catId: 'cat_elec', name: 'EV Charging Point', description: 'Wall mounted EV charger', priceType: 'fixed', basePrice: 1800, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i16', catId: 'cat_struct', name: 'Bulkhead Addition', description: 'Ceiling bulkhead feature (per lm)', priceType: 'sqm', basePrice: 0, sqmRate: 380, defaultQty: 5, active: true },
+    { id: 'i17', catId: 'cat_struct', name: 'Alfresco Enclosure', description: 'Enclose existing alfresco area', priceType: 'fixed', basePrice: 12500, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i18', catId: 'cat_display', name: 'Display Home Colour Scheme', description: 'Full display home colour upgrade', priceType: 'fixed', basePrice: 18500, sqmRate: 0, defaultQty: 1, active: true },
+    { id: 'i19', catId: 'cat_display', name: 'Display Home House Type', description: 'Amalfi 28 as displayed', priceType: 'fixed', basePrice: 285000, sqmRate: 0, defaultQty: 1, active: true }
+  ],
+  terms: `1. This estimate is valid for 30 days from the date of issue.\n2. All prices are inclusive of GST unless stated otherwise.\n3. This estimate is subject to final contract terms and conditions.\n4. Site-specific costs may vary upon soil test and survey results.\n5. Prices are subject to change based on market conditions.\n6. A deposit of 5% is required to commence preliminary plans.\n7. The builder reserves the right to adjust pricing based on final design selections.\n8. This document does not constitute a binding contract.\n9. All specifications are subject to council and building permit approvals.\n10. Spectrum Coach is not the builder — this estimate is prepared for consultancy purposes only.`,
+  quotes: []
+};
+
+function loadData() {
+  try { const s = localStorage.getItem('scEstimatorV2'); if (s) return JSON.parse(s); } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function saveData(data) {
+  try { localStorage.setItem('scEstimatorV2', JSON.stringify(data)); } catch(e) {}
+}
+
+let appData = loadData();
+let currentUser = null;
+let currentPage = 'dashboard';
+let modalConfig = null;
+let catCollapsed = {};
+
+let estimateState = {
+  client: { c1Name:'', c1Phone:'', c1Email:'', c2Name:'', c2Phone:'', c2Email:'', address:'', siteAddress:'' },
+  selections: {}, qtys: {}, manualPrices: {}
+};
+
+function render() {
+  document.getElementById('root').innerHTML = !currentUser ? renderAuth() : renderApp();
+  if (currentUser) bindInputListeners();
+}
+
+// ===== AUTH =====
+function renderAuth() {
+  return `<div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg width="72" height="48" viewBox="0 0 72 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="22" width="18" height="20" stroke="#2EAA6E" stroke-width="2" fill="none"/>
+          <polyline points="2,22 11,10 20,22" stroke="#2EAA6E" stroke-width="2" fill="none"/>
+          <rect x="18" y="22" width="18" height="20" stroke="#2EAA6E" stroke-width="2" fill="none" opacity="0.7"/>
+          <polyline points="18,22 27,10 36,22" stroke="#2EAA6E" stroke-width="2" fill="none" opacity="0.7"/>
+          <rect x="34" y="22" width="18" height="20" stroke="#2EAA6E" stroke-width="2" fill="none" opacity="0.4"/>
+          <polyline points="34,22 43,10 52,22" stroke="#2EAA6E" stroke-width="2" fill="none" opacity="0.4"/>
+        </svg>
+        <div class="wordmark">Spectrum Coach</div>
+        <div class="tagline">Sales &amp; Operations</div>
+      </div>
+      <p style="text-align:center;font-size:13px;color:#888;margin-bottom:1.5rem">Estimating System — Sign In</p>
+      <div id="auth-error"></div>
+      <div class="form-group"><label>Username</label><input type="text" id="auth-user" placeholder="Enter username" autocomplete="username"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="auth-pass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="btn btn-primary" onclick="doLogin()"><i class="ti ti-login"></i> Sign In</button>
+      <p style="text-align:center;font-size:11px;color:#bbb;margin-top:1.25rem">admin / admin123 &nbsp;&bull;&nbsp; sales / sales123</p>
+    </div>
+  </div>`;
+}
+
+function doLogin() {
+  const u = (document.getElementById('auth-user').value||'').trim();
+  const p = document.getElementById('auth-pass').value||'';
+  const user = appData.users.find(x => x.username === u && x.password === p);
+  if (user) { currentUser = user; currentPage = 'dashboard'; render(); }
+  else { document.getElementById('auth-error').innerHTML = '<div class="error-msg"><i class="ti ti-alert-circle"></i> Invalid username or password</div>'; }
+}
+
+// ===== APP SHELL =====
+function renderApp() {
+  const isAdmin = currentUser.role === 'admin';
+  const pages = [
+    { id:'dashboard', label:'Dashboard', icon:'ti-dashboard' },
+    { id:'new-estimate', label:'New Estimate', icon:'ti-calculator' },
+    { id:'quotes', label:'Saved Quotes', icon:'ti-file-invoice' }
+  ];
+  const adminPages = [
+    { id:'admin-pricing', label:'Pricing & Items', icon:'ti-coin' },
+    { id:'admin-categories', label:'Categories', icon:'ti-category' },
+    { id:'admin-users', label:'Users', icon:'ti-users' },
+    { id:'admin-terms', label:'Terms & Conditions', icon:'ti-file-text' }
+  ];
+  const initials = currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  const titles = { dashboard:'Dashboard','new-estimate':'New Estimate',quotes:'Saved Quotes','admin-pricing':'Pricing & Items','admin-categories':'Categories','admin-users':'User Management','admin-terms':'Terms & Conditions' };
+
+  return `<div class="app">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="wordmark">Spectrum Coach</div>
+        <div class="tagline">Estimating System</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">Menu</div>
+        ${pages.map(p=>`<div class="nav-item ${currentPage===p.id?'active':''}" onclick="navigate('${p.id}')"><i class="ti ${p.icon}"></i>${p.label}</div>`).join('')}
+        ${isAdmin ? `<div class="nav-section" style="margin-top:1rem">Admin</div>${adminPages.map(p=>`<div class="nav-item ${currentPage===p.id?'active':''}" onclick="navigate('${p.id}')"><i class="ti ${p.icon}"></i>${p.label}</div>`).join('')}` : ''}
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="user-avatar">${initials}</div>
+          <div class="user-info"><div class="user-name">${currentUser.name}</div><div class="user-role">${currentUser.role==='admin'?'Administrator':'Sales User'}</div></div>
+          <button class="btn-logout" onclick="doLogout()" title="Sign out"><i class="ti ti-logout"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title">${titles[currentPage]||'Estimating System'}</div>
+        <div class="topbar-actions">
+          ${currentPage==='new-estimate' ? `<button class="btn btn-green btn-sm" onclick="saveQuote()"><i class="ti ti-device-floppy"></i> Save Quote</button>` : ''}
+        </div>
+      </div>
+      <div class="content">${renderPage()}</div>
+    </div>
+    ${modalConfig ? renderModal() : ''}
+  </div>`;
+}
+
+function navigate(page) { currentPage = page; render(); }
+function doLogout() { currentUser = null; render(); }
+
+function renderPage() {
+  switch(currentPage) {
+    case 'dashboard': return renderDashboard();
+    case 'new-estimate': return renderEstimateBuilder();
+    case 'quotes': return renderQuotesList();
+    case 'admin-pricing': return renderAdminPricing();
+    case 'admin-categories': return renderAdminCategories();
+    case 'admin-users': return renderAdminUsers();
+    case 'admin-terms': return renderAdminTerms();
+    default: return '';
+  }
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const qs = appData.quotes;
+  const total = qs.reduce((s,q)=>s+(q.total||0),0);
+  const recent = [...qs].sort((a,b)=>b.createdAt-a.createdAt).slice(0,6);
+  return `
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Total Quotes</div><div class="stat-value">${qs.length}</div><div class="stat-sub">All time</div></div>
+    <div class="stat-card"><div class="stat-label">Total Value</div><div class="stat-value">$${Math.round(total).toLocaleString()}</div><div class="stat-sub">Quoted to date</div></div>
+    <div class="stat-card"><div class="stat-label">Categories</div><div class="stat-value">${appData.categories.filter(c=>c.active).length}</div><div class="stat-sub">Active</div></div>
+    <div class="stat-card"><div class="stat-label">Price Items</div><div class="stat-value">${appData.items.filter(i=>i.active).length}</div><div class="stat-sub">Active</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="ti ti-file-invoice"></i> Recent Quotes</div>
+      <button class="btn btn-green btn-sm" onclick="navigate('new-estimate')"><i class="ti ti-plus"></i> New Estimate</button>
+    </div>
+    <div class="card-body" style="padding:0.75rem 1.25rem">
+      ${recent.length===0 ? `<div class="empty-state"><i class="ti ti-file-invoice"></i><p style="margin-top:0.5rem">No quotes yet. Create your first estimate.</p></div>` :
+        recent.map(q=>`
+        <div class="quote-item">
+          <div><div class="client-name-disp">${q.client1Name||'Unnamed Client'}</div><div class="quote-meta">Quote #${q.id.toString().slice(-6)} &bull; ${new Date(q.createdAt).toLocaleDateString('en-AU')} &bull; ${q.siteAddress||'No site address'}</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="quote-amount">$${Math.round(q.total||0).toLocaleString()}</div>
+            <button class="btn-xs" onclick="viewQuote('${q.id}')"><i class="ti ti-eye"></i> View</button>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ===== ESTIMATE BUILDER =====
+function renderEstimateBuilder() {
+  const cats = appData.categories.filter(c=>c.active&&c.id!=='cat_tc').sort((a,b)=>a.order-b.order);
+  const total = calcTotal();
+  const catTotals = calcCatTotals().filter(ct=>ct.total>0);
+  const c = estimateState.client;
+
+  return `<div class="estimate-grid">
+    <div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-users"></i> Client Details</div></div>
+        <div class="card-body">
+          <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Client 1</div>
+          <div class="client-grid">
+            <div class="form-group"><label>Full Name</label><input type="text" id="c1Name" value="${esc(c.c1Name)}" oninput="clientChange()" placeholder="First & last name"/></div>
+            <div class="form-group"><label>Phone</label><input type="text" id="c1Phone" value="${esc(c.c1Phone)}" oninput="clientChange()" placeholder="Mobile number"/></div>
+            <div class="form-group" style="grid-column:span 2"><label>Email</label><input type="email" id="c1Email" value="${esc(c.c1Email)}" oninput="clientChange()" placeholder="Email address"/></div>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Client 2 (if applicable)</div>
+          <div class="client-grid">
+            <div class="form-group"><label>Full Name</label><input type="text" id="c2Name" value="${esc(c.c2Name)}" oninput="clientChange()" placeholder="First & last name"/></div>
+            <div class="form-group"><label>Phone</label><input type="text" id="c2Phone" value="${esc(c.c2Phone)}" oninput="clientChange()" placeholder="Mobile number"/></div>
+            <div class="form-group" style="grid-column:span 2"><label>Email</label><input type="email" id="c2Email" value="${esc(c.c2Email)}" oninput="clientChange()" placeholder="Email address"/></div>
+          </div>
+          <div class="divider"></div>
+          <div class="client-grid">
+            <div class="form-group"><label>Postal Address</label><input type="text" id="cAddress" value="${esc(c.address)}" oninput="clientChange()" placeholder="Client postal address"/></div>
+            <div class="form-group"><label>Site / Build Address</label><input type="text" id="cSiteAddress" value="${esc(c.siteAddress)}" oninput="clientChange()" placeholder="Land or build address"/></div>
+          </div>
+        </div>
+      </div>
+      ${cats.map(cat=>renderCategoryBlock(cat)).join('')}
+    </div>
+    <div class="quote-panel">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-receipt"></i> Quote Summary</div></div>
+        <div class="card-body">
+          ${catTotals.length===0 ? '<p style="font-size:13px;color:var(--gray)">Select items to build your quote.</p>' :
+            catTotals.map(ct=>`<div class="summary-line"><span class="summary-cat">${ct.name}</span><span class="summary-amt">$${Math.round(ct.total).toLocaleString()}</span></div>`).join('')}
+          <div class="divider" style="margin:10px 0"></div>
+          <div class="summary-line total-line"><span>TOTAL ESTIMATE</span><span style="color:var(--green)">$${Math.round(total).toLocaleString()}</span></div>
+          <div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-green" style="width:100%;justify-content:center" onclick="saveQuote()"><i class="ti ti-device-floppy"></i> Save Quote</button>
+            <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="doPrint()"><i class="ti ti-printer"></i> Print / Export</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <div class="card-header"><div class="card-title" style="font-size:13px"><i class="ti ti-file-description"></i> Terms & Conditions</div></div>
+        <div class="card-body" style="padding:1rem"><div class="tc-block">${appData.terms.replace(/\n/g,'<br>')}</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCategoryBlock(cat) {
+  const items = appData.items.filter(i=>i.catId===cat.id&&i.active);
+  if (!items.length) return '';
+  const collapsed = catCollapsed[cat.id];
+  return `<div class="category-block">
+    <div class="cat-header" onclick="toggleCat('${cat.id}')">
+      <div class="cat-title"><i class="ti ${cat.icon}"></i>${cat.name}</div>
+      <i class="ti ${collapsed?'ti-chevron-right':'ti-chevron-down'}" style="font-size:14px"></i>
+    </div>
+    ${collapsed ? '' : `
+    <div class="col-hdr"><div></div><div>Item</div><div style="text-align:right">Qty</div><div style="text-align:right">Rate ($)</div><div>Type</div><div style="text-align:right">Total</div></div>
+    ${items.map(item=>renderItemRow(item)).join('')}
+    `}
+  </div>`;
+}
+
+function renderItemRow(item) {
+  const sel = !!estimateState.selections[item.id];
+  const qty = estimateState.qtys[item.id]!==undefined ? estimateState.qtys[item.id] : item.defaultQty;
+  const mp = estimateState.manualPrices[item.id];
+  const rate = mp!==undefined ? mp : (item.priceType==='sqm' ? item.sqmRate : item.basePrice);
+  const lineTotal = item.priceType==='sqm' ? (rate*qty) : rate;
+  return `<div class="item-row">
+    <div class="item-check"><input type="checkbox" ${sel?'checked':''} onchange="toggleItem('${item.id}',this.checked)"/></div>
+    <div><div class="item-name">${esc(item.name)}</div><div class="item-sub">${esc(item.description)}</div></div>
+    <div class="item-input"><input type="number" value="${qty}" min="0" step="0.5" onchange="updateQty('${item.id}',this.value)" style="${item.priceType==='fixed'?'background:var(--gray-light);color:#aaa':''}"/></div>
+    <div class="item-input"><input type="number" value="${rate}" min="0" step="50" onchange="updateManualPrice('${item.id}',this.value)"/></div>
+    <div><span class="badge ${item.priceType==='sqm'?'badge-green':'badge-navy'}" style="font-size:11px;padding:2px 8px">${item.priceType==='sqm'?'SQM':'Fixed'}</span></div>
+    <div class="item-total-val ${sel?'active':'inactive'}">$${Math.round(sel?lineTotal:0).toLocaleString()}</div>
+  </div>`;
+}
+
+function calcItemTotal(item) {
+  if (!estimateState.selections[item.id]) return 0;
+  const qty = estimateState.qtys[item.id]!==undefined ? estimateState.qtys[item.id] : item.defaultQty;
+  const mp = estimateState.manualPrices[item.id];
+  const rate = mp!==undefined ? mp : (item.priceType==='sqm' ? item.sqmRate : item.basePrice);
+  return item.priceType==='sqm' ? rate*qty : rate;
+}
+function calcTotal() { return appData.items.reduce((s,i)=>s+calcItemTotal(i),0); }
+function calcCatTotals() {
+  return appData.categories.map(cat=>({ name:cat.name, total:appData.items.filter(i=>i.catId===cat.id).reduce((s,i)=>s+calcItemTotal(i),0) }));
+}
+
+function toggleCat(catId) { catCollapsed[catId]=!catCollapsed[catId]; refreshEstimate(); }
+function toggleItem(itemId, checked) { estimateState.selections[itemId]=checked; refreshEstimate(); }
+function updateQty(itemId, val) { estimateState.qtys[itemId]=parseFloat(val)||0; refreshEstimate(); }
+function updateManualPrice(itemId, val) { estimateState.manualPrices[itemId]=parseFloat(val)||0; refreshEstimate(); }
+
+function clientChange() {
+  ['c1Name','c1Phone','c1Email','c2Name','c2Phone','c2Email'].forEach(id=>{
+    const el=document.getElementById(id); if(el) estimateState.client[id]=el.value;
+  });
+  const a=document.getElementById('cAddress'); if(a) estimateState.client.address=a.value;
+  const s=document.getElementById('cSiteAddress'); if(s) estimateState.client.siteAddress=s.value;
+}
+
+function refreshEstimate() {
+  if (currentPage==='new-estimate') {
+    const pc = document.querySelector('.content');
+    if (pc) pc.innerHTML = renderEstimateBuilder();
+    bindInputListeners();
+  }
+}
+
+function bindInputListeners() {}
+
+// ===== QUOTES LIST =====
+function renderQuotesList() {
+  const qs = [...appData.quotes].sort((a,b)=>b.createdAt-a.createdAt);
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="ti ti-file-invoice"></i> All Quotes (${qs.length})</div>
+      <button class="btn btn-green btn-sm" onclick="navigate('new-estimate')"><i class="ti ti-plus"></i> New</button>
+    </div>
+    <div class="card-body" style="padding:0">
+      ${qs.length===0 ? '<div class="empty-state"><i class="ti ti-file-invoice"></i><p>No quotes saved yet.</p></div>' : ''}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Client</th><th>Site Address</th><th>Date</th><th>Total</th><th></th></tr></thead>
+          <tbody>
+            ${qs.map(q=>`<tr>
+              <td><strong>${esc(q.client1Name)||'—'}</strong>${q.client2Name?'<br><span style="font-size:12px;color:#888">+ '+esc(q.client2Name)+'</span>':''}</td>
+              <td style="font-size:13px;color:#666">${esc(q.siteAddress)||'—'}</td>
+              <td style="font-size:13px">${new Date(q.createdAt).toLocaleDateString('en-AU')}</td>
+              <td><strong style="color:var(--green)">$${Math.round(q.total||0).toLocaleString()}</strong></td>
+              <td style="white-space:nowrap">
+                <button class="btn-xs" onclick="viewQuote('${q.id}')"><i class="ti ti-eye"></i> View</button>
+                <button class="btn-xs" style="margin-left:4px" onclick="printQuoteById('${q.id}')"><i class="ti ti-printer"></i></button>
+                ${currentUser.role==='admin'?`<button class="btn-xs" style="margin-left:4px;color:var(--danger);border-color:var(--danger)" onclick="deleteQuote('${q.id}')"><i class="ti ti-trash"></i></button>`:''}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ===== ADMIN PRICING =====
+function renderAdminPricing() {
+  const cats = appData.categories.filter(c=>c.active);
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="ti ti-coin"></i> Pricing Items</div>
+      <button class="btn btn-green btn-sm" onclick="showAddItemModal()"><i class="ti ti-plus"></i> Add Item</button>
+    </div>
+    ${cats.map(cat=>{
+      const items=appData.items.filter(i=>i.catId===cat.id);
+      if(!items.length) return '';
+      return `<div>
+        <div style="padding:10px 1.25rem;background:var(--navy-light);border-top:1px solid var(--border);font-size:13px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px">
+          <i class="ti ${cat.icon}"></i>${cat.name}
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Description</th><th>Type</th><th>Default Qty</th><th>Price / Rate</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+              ${items.map(item=>`<tr>
+                <td><strong>${esc(item.name)}</strong></td>
+                <td style="font-size:12px;color:#666">${esc(item.description)}</td>
+                <td><span class="badge ${item.priceType==='sqm'?'badge-green':'badge-navy'}" style="font-size:11px">${item.priceType==='sqm'?'SQM Rate':'Fixed'}</span></td>
+                <td>${item.defaultQty}</td>
+                <td style="font-weight:600;color:var(--green)">$${item.priceType==='sqm'?item.sqmRate.toLocaleString()+'/unit':item.basePrice.toLocaleString()}</td>
+                <td><label class="toggle"><input type="checkbox" ${item.active?'checked':''} onchange="toggleItemActive('${item.id}',this.checked)"/><span class="slider-toggle"></span></label></td>
+                <td style="white-space:nowrap">
+                  <button class="btn-xs" onclick="showEditItemModal('${item.id}')"><i class="ti ti-edit"></i></button>
+                  <button class="btn-xs" style="margin-left:4px;color:var(--danger);border-color:var(--danger)" onclick="deleteItem('${item.id}')"><i class="ti ti-trash"></i></button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ===== ADMIN CATEGORIES =====
+function renderAdminCategories() {
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="ti ti-category"></i> Categories</div>
+      <button class="btn btn-green btn-sm" onclick="showAddCatModal()"><i class="ti ti-plus"></i> Add Category</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Order</th><th>Icon</th><th>Name</th><th>Items</th><th>Active</th><th></th></tr></thead>
+        <tbody>
+          ${[...appData.categories].sort((a,b)=>a.order-b.order).map(cat=>`<tr>
+            <td><span class="badge badge-gray">${cat.order}</span></td>
+            <td><i class="ti ${cat.icon}" style="font-size:20px;color:var(--navy)"></i></td>
+            <td><strong>${esc(cat.name)}</strong></td>
+            <td>${appData.items.filter(i=>i.catId===cat.id).length}</td>
+            <td><label class="toggle"><input type="checkbox" ${cat.active?'checked':''} onchange="toggleCatActive('${cat.id}',this.checked)"/><span class="slider-toggle"></span></label></td>
+            <td style="white-space:nowrap">
+              <button class="btn-xs" onclick="showEditCatModal('${cat.id}')"><i class="ti ti-edit"></i></button>
+              <button class="btn-xs" style="margin-left:4px;color:var(--danger);border-color:var(--danger)" onclick="deleteCat('${cat.id}')"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ===== ADMIN USERS =====
+function renderAdminUsers() {
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="ti ti-users"></i> Users</div>
+      <button class="btn btn-green btn-sm" onclick="showAddUserModal()"><i class="ti ti-plus"></i> Add User</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th></th></tr></thead>
+        <tbody>
+          ${appData.users.map(u=>`<tr>
+            <td><strong>${esc(u.name)}</strong></td>
+            <td><code style="background:var(--gray-light);padding:2px 8px;border-radius:4px;font-size:12px">${esc(u.username)}</code></td>
+            <td><span class="badge ${u.role==='admin'?'badge-navy':'badge-green'}">${u.role}</span></td>
+            <td style="white-space:nowrap">
+              <button class="btn-xs" onclick="showEditUserModal('${u.id}')"><i class="ti ti-edit"></i></button>
+              ${u.id!==currentUser.id?`<button class="btn-xs" style="margin-left:4px;color:var(--danger);border-color:var(--danger)" onclick="deleteUser('${u.id}')"><i class="ti ti-trash"></i></button>`:''}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ===== ADMIN TERMS =====
+function renderAdminTerms() {
+  return `<div class="card">
+    <div class="card-header"><div class="card-title"><i class="ti ti-file-text"></i> Terms & Conditions</div></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--gray);margin-bottom:1rem">These terms appear on all printed quotes and estimates.</p>
+      <div class="form-group"><textarea id="tc-editor" rows="14" style="font-size:13px;line-height:1.7">${appData.terms}</textarea></div>
+      <button class="btn btn-green" onclick="saveTerms()"><i class="ti ti-device-floppy"></i> Save Terms</button>
+    </div>
+  </div>`;
+}
+
+// ===== MODAL =====
+function renderModal() {
+  return `<div class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">${modalConfig.title}</div>
+        <button class="btn-xs" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">${modalConfig.body}</div>
+      <div class="modal-footer">${modalConfig.footer||''}</div>
+    </div>
+  </div>`;
+}
+function closeModal() { modalConfig=null; render(); }
+function closeModalOnOverlay(e) { if(e.target.classList.contains('modal-overlay')) closeModal(); }
+function showModal(title, body, footer) { modalConfig={title,body,footer}; render(); }
+
+// ===== QUOTE ACTIONS =====
+function saveQuote() {
+  clientChange();
+  const total = calcTotal();
+  if (!estimateState.client.c1Name) { alert('Please enter at least Client 1 name before saving.'); return; }
+  const q = {
+    id: Date.now().toString(),
+    createdAt: Date.now(),
+    client1Name: estimateState.client.c1Name,
+    client1Phone: estimateState.client.c1Phone,
+    client1Email: estimateState.client.c1Email,
+    client2Name: estimateState.client.c2Name,
+    client2Phone: estimateState.client.c2Phone,
+    client2Email: estimateState.client.c2Email,
+    address: estimateState.client.address,
+    siteAddress: estimateState.client.siteAddress,
+    total,
+    catTotals: calcCatTotals(),
+    terms: appData.terms
+  };
+  appData.quotes.push(q);
+  saveData(appData);
+  showModal('Quote Saved',
+    `<p style="font-size:14px;line-height:1.8">Quote for <strong>${q.client1Name}</strong> saved successfully.</p><br><div style="background:var(--green-light);border-radius:8px;padding:1rem;text-align:center"><div style="font-size:13px;color:#1a7a4e;margin-bottom:4px">Total Estimate</div><div style="font-size:28px;font-weight:700;color:var(--green)">$${Math.round(total).toLocaleString()}</div></div>`,
+    `<button class="btn btn-green" onclick="closeModal();navigate('quotes')"><i class="ti ti-file-invoice"></i> View All Quotes</button><button class="btn btn-outline" onclick="closeModal()">Continue Editing</button>`
+  );
+}
+
+function viewQuote(qId) {
+  const q = appData.quotes.find(x=>x.id===qId);
+  if (!q) return;
+  const breakdown = (q.catTotals||[]).filter(ct=>ct.total>0).map(ct=>
+    `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${ct.name}</span><span style="font-weight:600;color:var(--green)">$${Math.round(ct.total).toLocaleString()}</span></div>`
+  ).join('');
+  showModal(`Quote — ${q.client1Name||'Unnamed'}`,
+    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;font-size:13px">
+      <div><div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Client 1</div><strong>${esc(q.client1Name)||'—'}</strong><br>${esc(q.client1Phone)||''} ${esc(q.client1Email)||''}</div>
+      ${q.client2Name?`<div><div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Client 2</div><strong>${esc(q.client2Name)}</strong><br>${esc(q.client2Phone)||''}</div>`:'<div></div>'}
+      <div><div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Site Address</div>${esc(q.siteAddress)||'—'}</div>
+      <div><div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Date</div>${new Date(q.createdAt).toLocaleDateString('en-AU')}</div>
+    </div>
+    <div style="margin-bottom:1rem">${breakdown}</div>
+    <div style="background:var(--navy);color:white;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:600;font-size:14px">TOTAL ESTIMATE</span>
+      <span style="font-size:22px;font-weight:700;color:var(--green)">$${Math.round(q.total||0).toLocaleString()}</span>
+    </div>`,
+    `<button class="btn btn-green" onclick="printQuoteById('${q.id}')"><i class="ti ti-printer"></i> Print</button><button class="btn btn-outline" onclick="closeModal()">Close</button>`
+  );
+}
+
+function deleteQuote(qId) {
+  if (!confirm('Delete this quote? This cannot be undone.')) return;
+  appData.quotes = appData.quotes.filter(q=>q.id!==qId);
+  saveData(appData); render();
+}
+
+function doPrint() { clientChange(); printQuoteData({ client1Name:estimateState.client.c1Name, client1Phone:estimateState.client.c1Phone, client1Email:estimateState.client.c1Email, client2Name:estimateState.client.c2Name, client2Phone:estimateState.client.c2Phone, siteAddress:estimateState.client.siteAddress, total:calcTotal(), catTotals:calcCatTotals(), createdAt:Date.now(), terms:appData.terms }); }
+function printQuoteById(qId) { const q=appData.quotes.find(x=>x.id===qId); if(q) printQuoteData(q); }
+
+function printQuoteData(q) {
+  const rows = (q.catTotals||[]).filter(ct=>ct.total>0).map(ct=>`<tr><td>${ct.name}</td><td style="text-align:right;font-weight:600;color:#2EAA6E">$${Math.round(ct.total).toLocaleString()}</td></tr>`).join('');
+  const win = window.open('','_blank','width=800,height=900');
+  win.document.write(`<!DOCTYPE html><html><head><title>Quote — ${q.client1Name||'Client'}</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:740px;margin:40px auto;color:#333;font-size:14px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2EAA6E;padding-bottom:16px;margin-bottom:24px}
+    .logo-text{font-size:22px;font-weight:700;color:#1E3A5F;letter-spacing:2px;text-transform:uppercase}
+    .tagline{font-size:11px;color:#2EAA6E;letter-spacing:3px;text-transform:uppercase;margin-top:3px}
+    .quote-no{text-align:right;font-size:13px;color:#888}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;background:#f8f9fb;padding:16px;border-radius:8px}
+    .info-label{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+    .info-val{font-weight:600;font-size:13px}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;border-bottom:2px solid #eee}
+    td{padding:10px 12px;border-bottom:1px solid #eee;font-size:13px}
+    .total-row td{font-weight:700;font-size:16px;color:#1E3A5F;border-top:2px solid #1E3A5F;border-bottom:none;padding-top:14px}
+    .total-row td:last-child{color:#2EAA6E;font-size:18px}
+    .terms{font-size:11px;color:#999;margin-top:24px;border-top:1px solid #eee;padding-top:16px;line-height:1.7}
+    .footer{text-align:center;margin-top:32px;font-size:11px;color:#ccc}
+    @media print{body{margin:20px}}
+  </style></head><body>
+  <div class="header">
+    <div><div class="logo-text">Spectrum Coach</div><div class="tagline">Sales &amp; Operations</div></div>
+    <div class="quote-no"><div style="font-size:16px;font-weight:700;color:#1E3A5F">ESTIMATE</div><div>Date: ${new Date(q.createdAt).toLocaleDateString('en-AU')}</div><div>Ref: #${q.id?q.id.toString().slice(-6):'——'}</div></div>
+  </div>
+  <div class="info-grid">
+    <div><div class="info-label">Client 1</div><div class="info-val">${q.client1Name||'—'}</div>${q.client1Phone?`<div style="font-size:12px;color:#666">${q.client1Phone}</div>`:''}${q.client1Email?`<div style="font-size:12px;color:#666">${q.client1Email}</div>`:''}</div>
+    ${q.client2Name?`<div><div class="info-label">Client 2</div><div class="info-val">${q.client2Name}</div>${q.client2Phone?`<div style="font-size:12px;color:#666">${q.client2Phone}</div>`:''}</div>`:'<div></div>'}
+    <div><div class="info-label">Site / Build Address</div><div class="info-val">${q.siteAddress||'—'}</div></div>
+    <div><div class="info-label">Postal Address</div><div class="info-val">${q.address||'—'}</div></div>
+  </div>
+  <table><thead><tr><th>Category</th><th style="text-align:right">Amount (inc. GST)</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr class="total-row"><td>TOTAL ESTIMATE</td><td style="text-align:right">$${Math.round(q.total||0).toLocaleString()}</td></tr></tfoot>
+  </table>
+  <div class="terms"><strong>Terms &amp; Conditions</strong><br/>${(q.terms||appData.terms).replace(/\n/g,'<br>')}</div>
+  <div class="footer">Spectrum Coach — This estimate is prepared for consultancy purposes only and does not constitute a binding contract.</div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ===== ADMIN ACTIONS =====
+function toggleItemActive(id,v) { const i=appData.items.find(x=>x.id===id); if(i){i.active=v;saveData(appData);} }
+function toggleCatActive(id,v) { const c=appData.categories.find(x=>x.id===id); if(c){c.active=v;saveData(appData);} }
+function deleteItem(id) { if(!confirm('Delete this item?'))return; appData.items=appData.items.filter(i=>i.id!==id); saveData(appData); render(); }
+function deleteCat(id) { if(!confirm('Delete this category and all its items?'))return; appData.categories=appData.categories.filter(c=>c.id!==id); appData.items=appData.items.filter(i=>i.catId!==id); saveData(appData); render(); }
+function deleteUser(id) { if(!confirm('Delete this user?'))return; appData.users=appData.users.filter(u=>u.id!==id); saveData(appData); render(); }
+function saveTerms() { const el=document.getElementById('tc-editor'); if(el){appData.terms=el.value;saveData(appData);alert('Terms & Conditions saved successfully!');} }
+
+function catSelectOptions(selId) { return appData.categories.filter(c=>c.active).map(c=>`<option value="${c.id}" ${c.id===selId?'selected':''}>${c.name}</option>`).join(''); }
+
+function showAddItemModal() {
+  showModal('Add Pricing Item',
+    `<div class="form-group"><label>Category</label><select id="m-catId">${catSelectOptions('')}</select></div>
+     <div class="form-group"><label>Item Name</label><input type="text" id="m-name" placeholder="e.g. Soil Test"/></div>
+     <div class="form-group"><label>Description</label><input type="text" id="m-desc" placeholder="Brief description"/></div>
+     <div class="form-group"><label>Price Type</label><select id="m-ptype" onchange="togglePriceFields()"><option value="fixed">Fixed Price</option><option value="sqm">SQM / Unit Rate</option></select></div>
+     <div id="m-fixed-f" class="form-group"><label>Base Price ($)</label><input type="number" id="m-basePrice" value="0" step="100"/></div>
+     <div id="m-sqm-f" class="form-group" style="display:none"><label>Rate Per SQM / Unit ($)</label><input type="number" id="m-sqmRate" value="0" step="10"/></div>
+     <div class="form-group"><label>Default Qty</label><input type="number" id="m-qty" value="1" step="0.5"/></div>`,
+    `<button class="btn btn-green" onclick="saveNewItem()"><i class="ti ti-check"></i> Add Item</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+function showEditItemModal(itemId) {
+  const item = appData.items.find(i=>i.id===itemId);
+  if (!item) return;
+  showModal('Edit Item: '+item.name,
+    `<div class="form-group"><label>Category</label><select id="m-catId">${catSelectOptions(item.catId)}</select></div>
+     <div class="form-group"><label>Item Name</label><input type="text" id="m-name" value="${esc(item.name)}"/></div>
+     <div class="form-group"><label>Description</label><input type="text" id="m-desc" value="${esc(item.description)}"/></div>
+     <div class="form-group"><label>Price Type</label><select id="m-ptype" onchange="togglePriceFields()"><option value="fixed" ${item.priceType==='fixed'?'selected':''}>Fixed Price</option><option value="sqm" ${item.priceType==='sqm'?'selected':''}>SQM / Unit Rate</option></select></div>
+     <div id="m-fixed-f" class="form-group" ${item.priceType==='sqm'?'style="display:none"':''}><label>Base Price ($)</label><input type="number" id="m-basePrice" value="${item.basePrice}" step="100"/></div>
+     <div id="m-sqm-f" class="form-group" ${item.priceType==='fixed'?'style="display:none"':''}><label>Rate Per SQM / Unit ($)</label><input type="number" id="m-sqmRate" value="${item.sqmRate}" step="10"/></div>
+     <div class="form-group"><label>Default Qty</label><input type="number" id="m-qty" value="${item.defaultQty}" step="0.5"/></div>`,
+    `<button class="btn btn-green" onclick="saveEditItem('${itemId}')"><i class="ti ti-check"></i> Save Changes</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+function togglePriceFields() {
+  const pt = document.getElementById('m-ptype').value;
+  document.getElementById('m-fixed-f').style.display = pt==='fixed'?'':'none';
+  document.getElementById('m-sqm-f').style.display = pt==='sqm'?'':'none';
+}
+
+function saveNewItem() {
+  const name = (document.getElementById('m-name').value||'').trim();
+  if (!name) { alert('Item name is required'); return; }
+  appData.items.push({ id:'i'+Date.now(), catId:document.getElementById('m-catId').value, name, description:document.getElementById('m-desc').value, priceType:document.getElementById('m-ptype').value, basePrice:parseFloat(document.getElementById('m-basePrice').value)||0, sqmRate:parseFloat(document.getElementById('m-sqmRate').value)||0, defaultQty:parseFloat(document.getElementById('m-qty').value)||1, active:true });
+  saveData(appData); closeModal(); navigate('admin-pricing');
+}
+
+function saveEditItem(itemId) {
+  const item = appData.items.find(i=>i.id===itemId);
+  if (!item) return;
+  item.catId = document.getElementById('m-catId').value;
+  item.name = document.getElementById('m-name').value.trim();
+  item.description = document.getElementById('m-desc').value;
+  item.priceType = document.getElementById('m-ptype').value;
+  item.basePrice = parseFloat(document.getElementById('m-basePrice').value)||0;
+  item.sqmRate = parseFloat(document.getElementById('m-sqmRate').value)||0;
+  item.defaultQty = parseFloat(document.getElementById('m-qty').value)||1;
+  saveData(appData); closeModal(); navigate('admin-pricing');
+}
+
+function showAddCatModal() {
+  showModal('Add Category',
+    `<div class="form-group"><label>Category Name</label><input type="text" id="m-catname" placeholder="e.g. Landscaping"/></div>
+     <div class="form-group"><label>Icon (Tabler icon class)</label><input type="text" id="m-icon" value="ti-folder" placeholder="e.g. ti-tree"/><p style="font-size:12px;color:#888;margin-top:4px">Browse icons at <a href="https://tabler.io/icons" target="_blank">tabler.io/icons</a></p></div>
+     <div class="form-group"><label>Sort Order</label><input type="number" id="m-order" value="${appData.categories.length+1}"/></div>`,
+    `<button class="btn btn-green" onclick="saveNewCat()"><i class="ti ti-check"></i> Add Category</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+function showEditCatModal(catId) {
+  const cat = appData.categories.find(c=>c.id===catId);
+  if (!cat) return;
+  showModal('Edit Category: '+cat.name,
+    `<div class="form-group"><label>Category Name</label><input type="text" id="m-catname" value="${esc(cat.name)}"/></div>
+     <div class="form-group"><label>Icon (Tabler icon class)</label><input type="text" id="m-icon" value="${esc(cat.icon)}"/></div>
+     <div class="form-group"><label>Sort Order</label><input type="number" id="m-order" value="${cat.order}"/></div>`,
+    `<button class="btn btn-green" onclick="saveEditCat('${catId}')"><i class="ti ti-check"></i> Save</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+function saveNewCat() {
+  const name=(document.getElementById('m-catname').value||'').trim();
+  if(!name){alert('Name required');return;}
+  appData.categories.push({id:'cat_'+Date.now(),name,icon:document.getElementById('m-icon').value.trim()||'ti-folder',order:parseInt(document.getElementById('m-order').value)||99,active:true});
+  saveData(appData);closeModal();navigate('admin-categories');
+}
+
+function saveEditCat(catId) {
+  const cat=appData.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  cat.name=document.getElementById('m-catname').value.trim();
+  cat.icon=document.getElementById('m-icon').value.trim();
+  cat.order=parseInt(document.getElementById('m-order').value)||99;
+  saveData(appData);closeModal();navigate('admin-categories');
+}
+
+function showAddUserModal() {
+  showModal('Add User',
+    `<div class="form-group"><label>Full Name</label><input type="text" id="m-uname" placeholder="Full name"/></div>
+     <div class="form-group"><label>Username</label><input type="text" id="m-username" placeholder="Login username"/></div>
+     <div class="form-group"><label>Password</label><input type="password" id="m-upw" placeholder="Password"/></div>
+     <div class="form-group"><label>Role</label><select id="m-urole"><option value="user">User (Sales)</option><option value="admin">Administrator</option></select></div>`,
+    `<button class="btn btn-green" onclick="saveNewUser()"><i class="ti ti-check"></i> Add User</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+function showEditUserModal(userId) {
+  const u=appData.users.find(x=>x.id===userId);
+  if(!u)return;
+  showModal('Edit User: '+u.name,
+    `<div class="form-group"><label>Full Name</label><input type="text" id="m-uname" value="${esc(u.name)}"/></div>
+     <div class="form-group"><label>Username</label><input type="text" id="m-username" value="${esc(u.username)}"/></div>
+     <div class="form-group"><label>New Password <span style="font-weight:400;color:#888">(leave blank to keep current)</span></label><input type="password" id="m-upw" placeholder="Leave blank to keep"/></div>
+     <div class="form-group"><label>Role</label><select id="m-urole"><option value="user" ${u.role==='user'?'selected':''}>User (Sales)</option><option value="admin" ${u.role==='admin'?'selected':''}>Administrator</option></select></div>`,
+    `<button class="btn btn-green" onclick="saveEditUser('${userId}')"><i class="ti ti-check"></i> Save Changes</button><button class="btn btn-outline" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+function saveNewUser() {
+  const name=(document.getElementById('m-uname').value||'').trim();
+  const username=(document.getElementById('m-username').value||'').trim();
+  const password=document.getElementById('m-upw').value;
+  if(!name||!username||!password){alert('All fields required');return;}
+  if(appData.users.find(u=>u.username===username)){alert('Username already exists');return;}
+  appData.users.push({id:'u'+Date.now(),name,username,password,role:document.getElementById('m-urole').value});
+  saveData(appData);closeModal();navigate('admin-users');
+}
+
+function saveEditUser(userId) {
+  const u=appData.users.find(x=>x.id===userId);
+  if(!u)return;
+  u.name=document.getElementById('m-uname').value.trim();
+  u.username=document.getElementById('m-username').value.trim();
+  const pw=document.getElementById('m-upw').value;
+  if(pw)u.password=pw;
+  u.role=document.getElementById('m-urole').value;
+  saveData(appData);closeModal();navigate('admin-users');
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+render();
+</script>
+</body>
+</html>
